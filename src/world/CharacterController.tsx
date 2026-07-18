@@ -1,4 +1,4 @@
-﻿import { useFrame } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import {
@@ -7,6 +7,11 @@ import {
   type DestinationKey,
 } from "../data/destinations";
 import { usePortfolioStore } from "../store/usePortfolioStore";
+import {
+  BASE_GROUND_Y,
+  getGroundHeight,
+  resolveWorldPosition,
+} from "./worldColliders";
 import { YBotCharacter } from "./YBotCharacter";
 
 interface CharacterControllerProps {
@@ -23,6 +28,7 @@ const EXPLORE_RUN_SPEED = 6;
 const ARRIVAL_DISTANCE = 0.08;
 const LOCATION_DISTANCE = 2.1;
 const TURN_SPEED = 12;
+const CHARACTER_RADIUS = 0.42;
 
 const JUMP_VELOCITY = 4.85;
 const RISE_GRAVITY = 18;
@@ -32,8 +38,6 @@ const MIN_WORLD_X = -18;
 const MAX_WORLD_X = 18;
 const MIN_WORLD_Z = -13;
 const MAX_WORLD_Z = 13;
-
-const GROUND_Y = destinations.home.position[1];
 
 function shortestAngleDelta(from: number, to: number) {
   return THREE.MathUtils.euclideanModulo(
@@ -64,6 +68,7 @@ function dampAngle(
     ),
   );
 }
+
 function clampInput(value: number) {
   return Math.max(-1, Math.min(1, value));
 }
@@ -180,7 +185,7 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
 
       targetPosition.set(
         destinationPosition[0],
-        GROUND_Y,
+        BASE_GROUND_Y,
         destinationPosition[2],
       );
 
@@ -206,6 +211,10 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
         const movementAmount = Math.min(speed * delta, remainingDistance);
 
         character.position.addScaledVector(movementDirection, movementAmount);
+        character.position.y = getGroundHeight(
+          character.position.x,
+          character.position.z,
+        );
 
         const targetRotation = Math.atan2(
           movementDirection.x,
@@ -224,7 +233,10 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
 
       character.position.x = targetPosition.x;
       character.position.z = targetPosition.z;
-      character.position.y = GROUND_Y;
+      character.position.y = getGroundHeight(
+        targetPosition.x,
+        targetPosition.z,
+      );
 
       if (state.activeSection !== state.destination) {
         state.arriveAt(state.destination);
@@ -281,15 +293,25 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
         .normalize();
 
       const speed = isSprinting ? EXPLORE_RUN_SPEED : EXPLORE_WALK_SPEED;
-      character.position.addScaledVector(movementDirection, speed * delta);
+      const unclampedX = character.position.x + movementDirection.x * speed * delta;
+      const unclampedZ = character.position.z + movementDirection.z * speed * delta;
+      const clampedX = THREE.MathUtils.clamp(unclampedX, MIN_WORLD_X, MAX_WORLD_X);
+      const clampedZ = THREE.MathUtils.clamp(unclampedZ, MIN_WORLD_Z, MAX_WORLD_Z);
+      const resolvedPosition = resolveWorldPosition(
+        clampedX,
+        clampedZ,
+        character.position.x,
+        character.position.z,
+        CHARACTER_RADIUS,
+      );
 
       character.position.x = THREE.MathUtils.clamp(
-        character.position.x,
+        resolvedPosition.x,
         MIN_WORLD_X,
         MAX_WORLD_X,
       );
       character.position.z = THREE.MathUtils.clamp(
-        character.position.z,
+        resolvedPosition.z,
         MIN_WORLD_Z,
         MAX_WORLD_Z,
       );
@@ -300,12 +322,17 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
       );
 
       character.rotation.y = dampAngle(
-          character.rotation.y,
-          targetRotation,
-          TURN_SPEED,
-          delta,
-        );
+        character.rotation.y,
+        targetRotation,
+        TURN_SPEED,
+        delta,
+      );
     }
+
+    const groundY = getGroundHeight(
+      character.position.x,
+      character.position.z,
+    );
 
     if (!isGrounded.current) {
       const gravity =
@@ -316,11 +343,13 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
       verticalVelocity.current -= gravity * delta;
       character.position.y += verticalVelocity.current * delta;
 
-      if (character.position.y <= GROUND_Y) {
-        character.position.y = GROUND_Y;
+      if (character.position.y <= groundY) {
+        character.position.y = groundY;
         verticalVelocity.current = 0;
         isGrounded.current = true;
       }
+    } else {
+      character.position.y = groundY;
     }
 
     if (!isGrounded.current) {
@@ -374,9 +403,3 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
     </group>
   );
 }
-
-
-
-
-
-

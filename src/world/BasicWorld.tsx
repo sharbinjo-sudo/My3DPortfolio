@@ -1,4 +1,4 @@
-﻿import { Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -584,4 +584,6 @@ export function BasicWorld() {
     </>
   );
 }
+
+
 

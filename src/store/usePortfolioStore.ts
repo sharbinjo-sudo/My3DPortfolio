@@ -74,7 +74,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       experienceMode: mode,
       characterStatus: state.hasCompletedInitialGreeting ? "idle" : "waving",
       hasCompletedInitialGreeting: true,
-      isPanelVisible: false,
+      isPanelVisible: mode === "guided" && state.hasCompletedInitialGreeting,
       destination: state.activeSection,
       nearbySection: state.activeSection,
       movementInput: {
@@ -104,13 +104,13 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
     }),
 
   arriveAt: (destination) =>
-    set({
+    set((state) => ({
       destination,
       activeSection: destination,
       nearbySection: destination,
       characterStatus: "idle",
-      isPanelVisible: false,
-    }),
+      isPanelVisible: state.experienceMode === "guided",
+    })),
 
   setNearbySection: (destination) =>
     set((state) => ({
@@ -152,5 +152,9 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       isPanelVisible: false,
     }),
 }));
+
+
+
+
 
 

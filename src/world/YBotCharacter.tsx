@@ -51,6 +51,7 @@ export function YBotCharacter({ status }: YBotCharacterProps) {
     animationRoot,
   );
   const setCharacterStatus = usePortfolioStore((state) => state.setCharacterStatus);
+  const openPanel = usePortfolioStore((state) => state.openPanel);
 
   useEffect(() => {
     const clipName = animationNames[status];
@@ -89,6 +90,10 @@ export function YBotCharacter({ status }: YBotCharacterProps) {
     ) => {
       if (status === "waving" && event.action === action) {
         setCharacterStatus("idle");
+
+        if (usePortfolioStore.getState().experienceMode === "guided") {
+          openPanel();
+        }
       }
     };
 
@@ -99,7 +104,7 @@ export function YBotCharacter({ status }: YBotCharacterProps) {
       action.fadeOut(fadeDuration);
       action.timeScale = 1;
     };
-  }, [actions, mixer, names, setCharacterStatus, status]);
+  }, [actions, mixer, names, openPanel, setCharacterStatus, status]);
 
   return (
     <group ref={animationRoot}>
@@ -109,6 +114,7 @@ export function YBotCharacter({ status }: YBotCharacterProps) {
 }
 
 useGLTF.preload(MODEL_PATH);
+
 
 
 

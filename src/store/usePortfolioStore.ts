@@ -22,6 +22,7 @@ interface PortfolioState {
 
   experienceMode: ExperienceMode;
   characterStatus: CharacterStatus;
+  hasCompletedInitialGreeting: boolean;
 
   isPanelVisible: boolean;
 
@@ -56,6 +57,7 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
 
   experienceMode: "welcome",
   characterStatus: "idle",
+  hasCompletedInitialGreeting: false,
 
   isPanelVisible: false,
 
@@ -70,7 +72,8 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
   selectMode: (mode) =>
     set((state) => ({
       experienceMode: mode,
-      characterStatus: "waving",
+      characterStatus: state.hasCompletedInitialGreeting ? "idle" : "waving",
+      hasCompletedInitialGreeting: true,
       isPanelVisible: false,
       destination: state.activeSection,
       nearbySection: state.activeSection,
@@ -149,3 +152,5 @@ export const usePortfolioStore = create<PortfolioState>((set) => ({
       isPanelVisible: false,
     }),
 }));
+
+

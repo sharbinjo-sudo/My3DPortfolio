@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+﻿import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import {
@@ -38,6 +38,11 @@ const MIN_WORLD_X = -18;
 const MAX_WORLD_X = 18;
 const MIN_WORLD_Z = -13;
 const MAX_WORLD_Z = 13;
+const INITIAL_CHARACTER_POSITION: [number, number, number] = [
+  destinations.home.position[0],
+  getGroundHeight(destinations.home.position[0], destinations.home.position[2]),
+  destinations.home.position[2],
+];
 
 function shortestAngleDelta(from: number, to: number) {
   return THREE.MathUtils.euclideanModulo(
@@ -165,6 +170,10 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
     const state = usePortfolioStore.getState();
 
     if (state.experienceMode === "welcome") {
+      character.position.y = getGroundHeight(
+        character.position.x,
+        character.position.z,
+      );
       return;
     }
 
@@ -393,13 +402,11 @@ export function CharacterController({ characterRef }: CharacterControllerProps) 
   return (
     <group
       ref={characterRef}
-      position={[
-        destinations.home.position[0],
-        destinations.home.position[1],
-        destinations.home.position[2],
-      ]}
+      position={INITIAL_CHARACTER_POSITION}
     >
       <YBotCharacter status={characterStatus} />
     </group>
   );
 }
+
+
